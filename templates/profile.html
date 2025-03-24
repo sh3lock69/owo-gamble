@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Profile - Discord Site{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    Profile
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">Discord ID: {{ profile.discord_id }}</h5>
+    <p class="card-text">Current Balance: {{ profile.balance }} credits</p>
+    <!-- Add more profile details as needed -->
+  </div>
+</div>
+{% endblock %}
