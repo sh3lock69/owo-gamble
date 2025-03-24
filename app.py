@@ -5,19 +5,22 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change_this_secret")
-app.config["DEBUG"] = True  # Remove or disable in production
+app.config["DEBUG"] = True  # Remove in production
 
-# Connect to MongoDB Atlas (same as your Discord bot)
+# Connect to MongoDB Atlas (make sure to set MONGODB_URI in your environment)
 MONGODB_URI = os.environ["MONGODB_URI"]
 client = MongoClient(MONGODB_URI)
 db = client["discordbotdb"]
 login_codes_col = db["login_codes"]
 users_col = db["users"]
 
-@app.route('/', methods=["GET", "POST"])
+# ---------------------
+# Authentication Routes
+# ---------------------
+@app.route('/login', methods=["GET", "POST"])
 def login():
     """
-    Login route where the user enters their Discord ID and login code.
+    Login page: users enter Discord ID and login code.
     """
     if request.method == "POST":
         discord_id = request.form.get("discord_id")
@@ -27,61 +30,92 @@ def login():
             flash("Please enter both your Discord ID and login code.", "error")
             return redirect(url_for('login'))
 
-        # Validate that Discord ID is numeric
+        # Validate Discord ID as numeric; adjust if your IDs are strings.
         try:
             discord_id_int = int(discord_id)
         except ValueError:
             flash("Discord ID must be numeric.", "error")
             return redirect(url_for("login"))
 
-        # Try to find the login code in MongoDB
         record = login_codes_col.find_one({"_id": discord_id_int})
         if record and record.get("code") == login_code:
-            # Mark user as logged in by storing their Discord ID in the session
             session["discord_id"] = discord_id_int
             flash("Successfully logged in!", "success")
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("home"))
         else:
             flash("Invalid Discord ID or login code.", "error")
             return redirect(url_for("login"))
     return render_template("login.html")
 
-@app.route('/dashboard')
-def dashboard():
-    """
-    Dashboard showing the user’s balance and the Mine game.
-    """
-    if "discord_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
+@app.route('/logout')
+def logout():
+    """Log the user out."""
+    session.pop("discord_id", None)
+    flash("Logged out successfully.", "success")
+    return redirect(url_for("login"))
 
+# ---------------------
+# Main Application Routes
+# ---------------------
+def login_required(route):
+    """Simple decorator to require login."""
+    def wrapper(*args, **kwargs):
+        if "discord_id" not in session:
+            flash("Please log in first.", "error")
+            return redirect(url_for("login"))
+        return route(*args, **kwargs)
+    wrapper.__name__ = route.__name__
+    return wrapper
+
+@app.route('/home')
+@login_required
+def home():
+    """Home page: overview and navigation to other sections."""
     discord_id = session["discord_id"]
-    try:
-        user_doc = users_col.find_one({"_id": discord_id})
-        balance = user_doc.get("balance", 0) if user_doc else 0
-    except Exception as e:
-        return f"Database error: {str(e)}", 500
+    return render_template("home.html", discord_id=discord_id)
 
-    return render_template("dashboard.html", discord_id=discord_id, balance=balance)
+@app.route('/profile')
+@login_required
+def profile():
+    """Profile page: show user's details and balance."""
+    discord_id = session["discord_id"]
+    user_doc = users_col.find_one({"_id": discord_id})
+    # For demo purposes, profile only shows Discord ID and balance
+    profile_data = {
+        "discord_id": discord_id,
+        "balance": user_doc.get("balance", 0) if user_doc else 0,
+        # Add more profile data as needed
+    }
+    return render_template("profile.html", profile=profile_data)
 
+@app.route('/games')
+@login_required
+def games():
+    """Games page: list games available including the mine game."""
+    discord_id = session["discord_id"]
+    user_doc = users_col.find_one({"_id": discord_id})
+    balance = user_doc.get("balance", 0) if user_doc else 0
+    return render_template("games.html", balance=balance)
+
+@app.route('/support')
+@login_required
+def support():
+    """Support page: show support info or a contact form."""
+    return render_template("support.html")
+
+# ---------------------
+# Mine Game Endpoint
+# ---------------------
 @app.route('/mine', methods=['POST'])
+@login_required
 def mine():
     """
-    Simple mine game endpoint.
-    Randomly awards a reward and updates the user’s balance.
+    Mine game: randomly award credits.
     """
-    if "discord_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     discord_id = session["discord_id"]
+    # 70% chance to win some reward (5 to 20 credits)
+    reward = random.randint(5, 20) if random.random() > 0.3 else 0
 
-    # 70% chance of winning a reward
-    if random.random() > 0.3:
-        reward = random.randint(5, 20)
-    else:
-        reward = 0
-
-    # Update user's balance in the database
     user_doc = users_col.find_one({"_id": discord_id})
     if user_doc:
         new_balance = user_doc.get("balance", 0) + reward
@@ -93,13 +127,5 @@ def mine():
     message = f"You mined {reward} credits!" if reward > 0 else "No luck this time. Try again!"
     return jsonify({"balance": new_balance, "reward": reward, "message": message})
 
-@app.route('/logout')
-def logout():
-    """Log the user out."""
-    session.pop("discord_id", None)
-    flash("Logged out successfully.", "success")
-    return redirect(url_for("login"))
-
 if __name__ == '__main__':
-    # For production, Railway will use a proper web server.
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
