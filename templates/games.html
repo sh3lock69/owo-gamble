@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Games - Discord Site{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-6">
+    <!-- Mine Game Card -->
+    <div class="card mb-4">
+      <div class="card-header">
+        Mine Game
+      </div>
+      <div class="card-body">
+        <p>Your current balance: <strong id="balance">{{ balance }}</strong> credits</p>
+        <p id="mine-message">Click below to mine for credits!</p>
+        <button id="mine-btn" class="btn btn-success">Mine</button>
+      </div>
+    </div>
+  </div>
+  <!-- Future games can be added here in similar cards -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById("mine-btn").addEventListener("click", function() {
+    fetch("/mine", { method: "POST" })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById("mine-message").innerText = data.error;
+        } else {
+          document.getElementById("balance").innerText = data.balance;
+          document.getElementById("mine-message").innerText = data.message;
+        }
+      })
+      .catch(err => {
+        document.getElementById("mine-message").innerText = "An error occurred. Please try again.";
+        console.error(err);
+      });
+  });
+</script>
+{% endblock %}
