@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from pymongo import MongoClient
 
 app = Flask(__name__)
-
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change_this_secret")  # Added secret key
 
 # Connect to MongoDB Atlas (same as your Discord bot)
 MONGODB_URI = os.environ["MONGODB_URI"]
@@ -28,8 +28,8 @@ def login():
         # Try to find the login code in MongoDB
         record = login_codes_col.find_one({"_id": int(discord_id)})
         if record and record.get("code") == login_code:
-            # Mark user as logged in
-
+            # Mark user as logged in by storing their Discord ID in the session
+            session["discord_id"] = int(discord_id)
             flash("Successfully logged in!", "success")
             return redirect(url_for("dashboard"))
         else:
@@ -56,7 +56,7 @@ def dashboard():
 @app.route('/logout')
 def logout():
     """Log the user out."""
-
+    session.pop("discord_id", None)
     flash("Logged out successfully.", "success")
     return redirect(url_for("login"))
 
