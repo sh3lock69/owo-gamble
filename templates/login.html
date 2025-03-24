@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Discord Bot Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 400px; margin: auto; padding: 20px; }
+        input[type="text"] { width: 100%; padding: 8px; margin: 5px 0; }
+        input[type="submit"] { padding: 8px 16px; }
+        .flash { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login with Discord ID</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <p class="flash">{{ message }}</p>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label for="discord_id">Discord ID:</label>
+            <input type="text" id="discord_id" name="discord_id" placeholder="Enter your Discord ID" required>
+            <label for="login_code">Login Code:</label>
+            <input type="text" id="login_code" name="login_code" placeholder="Enter your login code" required>
+            <input type="submit" value="Login">
+        </form>
+    </div>
+</body>
+</html>
