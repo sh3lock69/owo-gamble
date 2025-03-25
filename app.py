@@ -256,6 +256,19 @@ def cashout_mines():
         "message": f"You cashed out with {picks} safe picks! You won {payout:.2f} credits.",
         "new_balance": new_balance
     })
+@app.route('/games/mines/state', methods=['GET'])
+@login_required
+def get_mines_state():
+    """Returns the current mines game state in JSON."""
+    current_game = session.get("mines_game", {})
+    return jsonify(current_game)
+
+@app.route('/games/mines/new', methods=['POST'])
+@login_required
+def new_mines_game():
+    """Clears any existing game and returns success. The front end can then reload the Mines page or start a new game."""
+    session.pop("mines_game", None)
+    return jsonify({"message": "New game ready."})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
