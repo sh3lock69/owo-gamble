@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Mines Game - Discord Site{% endblock %}
+{% block content %}
+<div class="card bg-dark text-white mb-4">
+  <div class="card-body">
+    <h3 class="card-title">Stake-like Mines</h3>
+    <p class="card-text">Balance: {{ balance }} credits</p>
+    <hr>
+    {% if current_game and current_game.status == "ongoing" %}
+      <!-- Game is in progress -->
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <p><strong>Bet:</strong> {{ current_game.bet }}</p>
+          <p><strong>Mines:</strong> {{ current_game.num_mines }}</p>
+          <p><strong>Status:</strong> Ongoing</p>
+          <p><strong>Safe Picks:</strong> {{ current_game.picks }}</p>
+          <button id="cashout-btn" class="btn btn-warning w-100">Cash Out</button>
+        </div>
+        <div class="col-md-9">
+          <!-- 5x5 grid of tiles -->
+          <div class="d-flex flex-wrap" style="width: 250px;">
+            {% for i in range(25) %}
+            {% set revealed = i in current_game.revealed %}
+            {% set is_bomb = i in current_game.bombs %}
+            <div class="tile d-flex align-items-center justify-content-center 
+                 {% if revealed and is_bomb %} tile-bomb 
+                 {% elif revealed and not is_bomb %} tile-gem 
+                 {% else %} tile-unknown {% endif %}"
+                 data-index="{{ i }}"
+                 style="width: 50px; height: 50px; border: 1px solid #444; cursor: pointer; margin: 1px;">
+              {% if revealed and is_bomb %}
+                <span>💣</span>
+              {% elif revealed and not is_bomb %}
+                <span>💎</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% elif current_game and current_game.status == "lost" %}
+      <h4 class="text-danger">You hit a bomb! Game Over.</
