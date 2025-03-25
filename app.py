@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change_this_secret")
 app.config["DEBUG"] = True  # Remove in production
 
-# Connect to MongoDB Atlas (make sure to set MONGODB_URI in your environment)
+# Connect to MongoDB Atlas (ensure MONGODB_URI is set in your environment)
 MONGODB_URI = os.environ["MONGODB_URI"]
 client = MongoClient(MONGODB_URI)
 db = client["discordbotdb"]
@@ -17,10 +17,20 @@ users_col = db["users"]
 # ---------------------
 # Authentication Routes
 # ---------------------
+@app.route('/')
+def index():
+    """
+    Root route: if logged in, show home page; otherwise, show login page.
+    """
+    if "discord_id" in session:
+        return redirect(url_for("home"))
+    else:
+        return redirect(url_for("login"))
+
 @app.route('/login', methods=["GET", "POST"])
 def login():
     """
-    Login page: users enter Discord ID and login code.
+    Login page: users enter their Discord ID and login code.
     """
     if request.method == "POST":
         discord_id = request.form.get("discord_id")
@@ -30,7 +40,7 @@ def login():
             flash("Please enter both your Discord ID and login code.", "error")
             return redirect(url_for('login'))
 
-        # Validate Discord ID as numeric; adjust if your IDs are strings.
+        # Validate that Discord ID is numeric (adjust if IDs are alphanumeric)
         try:
             discord_id_int = int(discord_id)
         except ValueError:
@@ -58,7 +68,7 @@ def logout():
 # Main Application Routes
 # ---------------------
 def login_required(route):
-    """Simple decorator to require login."""
+    """Decorator to ensure a user is logged in."""
     def wrapper(*args, **kwargs):
         if "discord_id" not in session:
             flash("Please log in first.", "error")
@@ -70,7 +80,7 @@ def login_required(route):
 @app.route('/home')
 @login_required
 def home():
-    """Home page: overview and navigation to other sections."""
+    """Home page with an overview and navigation."""
     discord_id = session["discord_id"]
     return render_template("home.html", discord_id=discord_id)
 
@@ -80,18 +90,17 @@ def profile():
     """Profile page: show user's details and balance."""
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
-    # For demo purposes, profile only shows Discord ID and balance
     profile_data = {
         "discord_id": discord_id,
         "balance": user_doc.get("balance", 0) if user_doc else 0,
-        # Add more profile data as needed
+        # Additional profile data can be added here.
     }
     return render_template("profile.html", profile=profile_data)
 
 @app.route('/games')
 @login_required
 def games():
-    """Games page: list games available including the mine game."""
+    """Games page: list available games (including the mine game)."""
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
@@ -100,7 +109,7 @@ def games():
 @app.route('/support')
 @login_required
 def support():
-    """Support page: show support info or a contact form."""
+    """Support page: contact or support info."""
     return render_template("support.html")
 
 # ---------------------
@@ -110,10 +119,9 @@ def support():
 @login_required
 def mine():
     """
-    Mine game: randomly award credits.
+    Simple mine game: randomly award credits and update balance.
     """
     discord_id = session["discord_id"]
-    # 70% chance to win some reward (5 to 20 credits)
     reward = random.randint(5, 20) if random.random() > 0.3 else 0
 
     user_doc = users_col.find_one({"_id": discord_id})
