@@ -1,40 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Games - Discord Site{% endblock %}
 {% block content %}
-<div class="row">
-  <div class="col-md-6">
-    <!-- Mine Game Card -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-dark text-white">
-        Mine Game
-      </div>
-      <div class="card-body">
-        <p>Your current balance: <strong id="balance">{{ balance }}</strong> credits</p>
-        <p id="mine-message">Click below to mine for credits!</p>
-        <button id="mine-btn" class="btn btn-success">Mine</button>
-      </div>
-    </div>
+<div class="card bg-dark text-white mb-4">
+  <div class="card-body">
+    <h3 class="card-title">Games Lobby</h3>
+    <p class="card-text">Balance: {{ balance }} credits</p>
+    <hr>
+    <!-- Link to Mines game -->
+    <a href="{{ url_for('mines_game') }}" class="btn btn-success mb-3">Play Mines</a>
+    <p>More games coming soon!</p>
   </div>
-  <!-- Additional games can be added here -->
 </div>
-{% endblock %}
-{% block scripts %}
-<script>
-  document.getElementById("mine-btn").addEventListener("click", function() {
-    fetch("/mine", { method: "POST" })
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          document.getElementById("mine-message").innerText = data.error;
-        } else {
-          document.getElementById("balance").innerText = data.balance;
-          document.getElementById("mine-message").innerText = data.message;
-        }
-      })
-      .catch(err => {
-        document.getElementById("mine-message").innerText = "An error occurred. Please try again.";
-        console.error(err);
-      });
-  });
-</script>
 {% endblock %}
