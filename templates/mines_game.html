@@ -1,24 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Mines Game - Discord Site{% endblock %}
 {% block content %}
+
 <div class="card bg-dark text-white mb-4">
   <div class="card-body">
     <h3 class="card-title">Stake-like Mines</h3>
-    <p class="card-text">Balance: {{ balance }} credits</p>
+    <p class="card-text">Balance: <span id="user-balance">{{ balance }}</span> credits</p>
     <hr>
+
+    <!-- If a game is in progress -->
     {% if current_game and current_game.status == "ongoing" %}
-      <!-- Game is in progress -->
       <div class="row">
         <div class="col-md-3 mb-3">
           <p><strong>Bet:</strong> {{ current_game.bet }}</p>
           <p><strong>Mines:</strong> {{ current_game.num_mines }}</p>
           <p><strong>Status:</strong> Ongoing</p>
-          <p><strong>Safe Picks:</strong> {{ current_game.picks }}</p>
-          <button id="cashout-btn" class="btn btn-warning w-100">Cash Out</button>
+          <p><strong>Safe Picks:</strong> <span id="safe-picks">{{ current_game.picks }}</span></p>
+          <button id="cashout-btn" class="btn btn-warning w-100 mb-2">Cash Out</button>
+          <button id="new-game-btn" class="btn btn-light w-100">Start New Game</button>
         </div>
         <div class="col-md-9">
           <!-- 5x5 grid of tiles -->
-          <div class="d-flex flex-wrap" style="width: 250px;">
+          <div class="d-flex flex-wrap" style="width: 260px;">
             {% for i in range(25) %}
               {% set revealed = i in current_game.revealed %}
               {% set is_bomb = i in current_game.bombs %}
@@ -26,29 +29,36 @@
                   {% if revealed and is_bomb %} tile-bomb 
                   {% elif revealed and not is_bomb %} tile-gem 
                   {% else %} tile-unknown {% endif %}"
-                  data-index="{{ i }}"
-                  style="width: 50px; height: 50px; border: 1px solid #444; cursor: pointer; margin: 1px;">
+                  data-index="{{ i }}">
                 {% if revealed and is_bomb %}
-                  <span>💣</span>
+                  💣
                 {% elif revealed and not is_bomb %}
-                  <span>💎</span>
+                  💎
+                {% else %}
+                  <!-- Hidden tile -->
                 {% endif %}
               </div>
             {% endfor %}
           </div>
         </div>
       </div>
+
+    <!-- If game is lost -->
     {% elif current_game and current_game.status == "lost" %}
       <h4 class="text-danger">You hit a bomb! Game Over.</h4>
       <p><strong>Bet:</strong> {{ current_game.bet }} credits</p>
-      <button onclick="window.location.reload()" class="btn btn-light">Start New Game</button>
+      <p><strong>Safe Picks:</strong> {{ current_game.picks }}</p>
+      <button id="new-game-btn" class="btn btn-light">Start New Game</button>
+
+    <!-- If game is cashed out -->
     {% elif current_game and current_game.status == "cashed" %}
       <h4 class="text-success">You cashed out!</h4>
       <p><strong>Bet:</strong> {{ current_game.bet }} credits</p>
       <p><strong>Safe Picks:</strong> {{ current_game.picks }}</p>
-      <button onclick="window.location.reload()" class="btn btn-light">Start New Game</button>
+      <button id="new-game-btn" class="btn btn-light">Start New Game</button>
+
+    <!-- No game in progress -->
     {% else %}
-      <!-- No game in progress -->
       <form method="POST" action="{{ url_for('start_mines') }}">
         <div class="row mb-3">
           <div class="col-md-4">
@@ -67,56 +77,123 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Status message area -->
+<div id="status-message" class="text-center"></div>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-  // Only attach tile click if game is ongoing
-  const currentGame = {{ current_game|tojson if current_game else "null" }};
-
-  if (currentGame && currentGame.status === "ongoing") {
-    document.querySelectorAll('.tile-unknown').forEach(tile => {
-      tile.addEventListener('click', function() {
-        const tileIndex = this.getAttribute('data-index');
-        fetch("{{ url_for('reveal_tile') }}", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ "tile_index": tileIndex })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            alert(data.error);
-          } else {
-            if (data.result === "bomb") {
-              alert(data.message);
-              window.location.reload();
-            } else {
-              // Safe pick
-              window.location.reload();
-            }
-          }
-        })
-        .catch(err => console.error(err));
-      });
-    });
-
-    // Cashout
-    const cashoutBtn = document.getElementById('cashout-btn');
-    cashoutBtn.addEventListener('click', function() {
-      fetch("{{ url_for('cashout_mines') }}", { method: "POST" })
+// Only attach event listeners if a game is ongoing
+const currentGame = {{ current_game|tojson if current_game else "null" }};
+if (currentGame && currentGame.status === "ongoing") {
+  // 1) Tile Click: reveal in-place
+  document.querySelectorAll('.tile-unknown').forEach(tile => {
+    tile.addEventListener('click', function() {
+      const tileIndex = this.getAttribute('data-index');
+      fetch("{{ url_for('reveal_tile') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ "tile_index": tileIndex })
+      })
       .then(res => res.json())
       .then(data => {
         if (data.error) {
           alert(data.error);
         } else {
-          alert(data.message);
-          window.location.reload();
+          if (data.result === "bomb") {
+            // Show bomb on this tile
+            tile.classList.remove('tile-unknown');
+            tile.classList.add('tile-bomb');
+            tile.textContent = '💣';
+
+            // Reveal all bombs in red
+            revealAllBombs(currentGame.bombs);
+            
+            // Update status
+            document.getElementById('status-message').innerHTML = `<h4 class="text-danger">${data.message}</h4>`;
+            // Switch to lost state (no new reveals)
+            // Reload to see "lost" UI or manually fix UI
+            setTimeout(() => { window.location.reload(); }, 1500);
+          } else {
+            // Safe pick
+            tile.classList.remove('tile-unknown');
+            tile.classList.add('tile-gem');
+            tile.textContent = '💎';
+
+            // Update picks
+            document.getElementById('safe-picks').textContent = data.picks;
+            // Optional: show a short message
+            document.getElementById('status-message').innerHTML = `<p class="text-success">${data.message}</p>`;
+            // Update currentGame picks
+            currentGame.picks = data.picks;
+          }
         }
       })
       .catch(err => console.error(err));
     });
+  });
+
+  // 2) Cash Out
+  const cashoutBtn = document.getElementById('cashout-btn');
+  cashoutBtn.addEventListener('click', function() {
+    fetch("{{ url_for('cashout_mines') }}", { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        alert(data.error);
+      } else {
+        // Update user balance
+        document.getElementById('user-balance').textContent = data.new_balance;
+        // Show success message
+        document.getElementById('status-message').innerHTML = `<h4 class="text-success">${data.message}</h4>`;
+        // Reload after short delay
+        setTimeout(() => { window.location.reload(); }, 1500);
+      }
+    })
+    .catch(err => console.error(err));
+  });
+
+  // 3) Start New Game
+  const newGameBtn = document.getElementById('new-game-btn');
+  newGameBtn.addEventListener('click', function() {
+    // We can either do a direct reload or call a route that resets session
+    fetch("{{ url_for('new_mines_game') }}", { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      // Just reload the page to see the new game form
+      window.location.reload();
+    })
+    .catch(err => console.error(err));
+  });
+} else {
+  // If game is lost or cashed, we also attach a "new game" event
+  const newGameBtn = document.getElementById('new-game-btn');
+  if (newGameBtn) {
+    newGameBtn.addEventListener('click', function() {
+      fetch("{{ url_for('new_mines_game') }}", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        window.location.reload();
+      })
+      .catch(err => console.error(err));
+    });
   }
+}
+
+// Helper: Reveal all bombs in red
+function revealAllBombs(bombs) {
+  bombs.forEach(index => {
+    const bombTile = document.querySelector(`.tile[data-index="${index}"]`);
+    if (bombTile) {
+      bombTile.classList.remove('tile-unknown');
+      bombTile.classList.remove('tile-gem');
+      bombTile.classList.add('tile-bomb');
+      bombTile.textContent = '💣';
+    }
+  });
+}
 </script>
 {% endblock %}
