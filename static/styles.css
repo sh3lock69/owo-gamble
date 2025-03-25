@@ -1,22 +1,58 @@
+/* Remove default margin from the container on index page to go full screen */
+body > .container {
+  margin-top: 0 !important;
+}
+
+/* Full carousel container: fill viewport height */
+.full-carousel-container {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: calc(100vh - 56px); /* subtract navbar height (~56px) */
+  overflow: hidden;
+}
+
+.carousel-inner,
+.carousel-item,
+.carousel-image {
+  height: 100%;
+}
+
+/* Make images cover the full container without stretching */
+.carousel-image {
+  object-fit: cover;
+  object-position: center;
+  height: 100%;
+}
+
+/* Dark background, white text */
 body {
   background-color: #1f1f1f;
   color: #ddd;
 }
 
+/* Navbar & Cards */
 .navbar, .card {
   background-color: #2c2c2c;
 }
 
-.carousel-caption h5, .carousel-caption p {
-  text-shadow: 1px 1px 2px #000;
+/* Mines game tiles */
+.tile {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #444;
+  margin: 2px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 1.2rem;
+  line-height: 50px;
 }
-
-.btn-primary {
-  background-color: #3ba55d;
-  border-color: #3ba55d;
+.tile-unknown {
+  background-color: #23272a;
 }
-
-.btn-success {
+.tile-gem {
   background-color: #3ba55d;
-  border-color: #3ba55d;
+}
+.tile-bomb {
+  background-color: #d83c3e;
 }
