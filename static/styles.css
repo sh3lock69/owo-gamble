@@ -59,7 +59,9 @@ body {
 
 .card .form-label,
 .card .form-control {
-  color: #fff !important;
+  background-color: #2a2d32 !important; /* or any dark gray you prefer */
+  border: 1px solid #444;              /* subtle border */
+  color: #fff;                         /* ensure text is white */
 }
 .card .form-control::placeholder {
   color: #ccc;
