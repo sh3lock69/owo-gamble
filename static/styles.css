@@ -1,3 +1,13 @@
 body {
-  background: #f8f9fa;
+  background: #2c2f33;  /* A dark grey background */
+  color: #ffffff;       /* White text for contrast */
+}
+
+.card {
+  background: #23272a;  /* Dark card background */
+  border: none;
+}
+
+.navbar, .card-header {
+  background: #202225;
 }
