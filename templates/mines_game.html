@@ -2,12 +2,17 @@
 {% block title %}Mines Game - Discord Site{% endblock %}
 {% block content %}
 
-<!-- Top Bar: shows user balance and a "Wallet" button -->
+<!-- Top Bar: shows user balance -->
 <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-dark text-white rounded">
   <div class="h5 mb-0">
-    Your Balance: <span id="user-balance" class="text-success">{{ balance }}</span> credits
+    <!-- Format balance with commas and rename "credits" to "OwO currency" -->
+    Your Balance:
+    <span id="user-balance" class="text-success">
+      {{ "{:,}".format(balance) }}
+    </span>
+    OwO currency
   </div>
-  <button class="btn btn-outline-light">Wallet</button>
+  <!-- Removed the "Wallet" button -->
 </div>
 
 <!-- Main Row: Left Panel for Bet settings, Right Panel for 5x5 grid -->
@@ -18,13 +23,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="card-title mb-0">Mine Game</h5>
-          <!-- Manual/Auto toggle (not functional, just for looks) -->
-          <div class="btn-group" role="group" aria-label="Manual Auto toggle">
-            <input type="radio" class="btn-check" name="mode" id="manual-mode" checked>
-            <label class="btn btn-outline-secondary btn-sm" for="manual-mode">Manual</label>
-            <input type="radio" class="btn-check" name="mode" id="auto-mode">
-            <label class="btn btn-outline-secondary btn-sm" for="auto-mode">Auto</label>
-          </div>
+          <!-- Removed the Manual/Auto toggle -->
         </div>
         <hr>
         
@@ -45,7 +44,6 @@
           </div>
           
           <!-- Multiplier Box -->
-          <!-- Example multiplier logic: 1.0 + picks * 0.2 (adjust in JS below) -->
           <div class="text-center my-3">
             <div class="p-3 bg-secondary rounded" style="font-size:1.2rem;">
               Current Multiplier:
@@ -58,7 +56,6 @@
             <button id="cashout-btn" class="btn btn-danger btn-lg">Cash Out</button>
           </div>
           
-          <!-- New Game button if you want it here, or let the tile UI handle it -->
         {% elif current_game and current_game.status == "lost" %}
           <!-- Lost Game UI -->
           <p class="text-danger">You hit a bomb! Game Over.</p>
@@ -79,7 +76,7 @@
           <!-- No Game in Progress: Bet Form -->
           <form method="POST" action="{{ url_for('start_mines') }}">
             <div class="mb-3">
-              <label for="bet_amount" class="form-label">Bet Amount</label>
+              <label for="bet_amount" class="form-label">Bet Amount (OwO currency)</label>
               <input
                 type="number"
                 step="0.01"
@@ -213,8 +210,9 @@ if (currentGame && currentGame.status === "ongoing") {
       if (data.error) {
         alert(data.error);
       } else {
-        // Update user balance
-        document.getElementById('user-balance').textContent = data.new_balance;
+        // Update user balance (reformat with commas if desired)
+        const newBal = data.new_balance.toLocaleString('en-US');
+        document.getElementById('user-balance').textContent = newBal;
         // Show success message
         document.getElementById('status-message').innerHTML = `<h4 class="text-success">${data.message}</h4>`;
         setTimeout(() => { window.location.reload(); }, 1500);
