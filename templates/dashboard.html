@@ -4,15 +4,26 @@
 <div class="text-center mb-4">
   <h2>Your Balance: <span class="text-success">{{ balance }} credits</span></h2>
 </div>
-<div class="card bg-dark text-white shadow">
+
+<div class="card bg-dark text-white shadow mb-4">
   <div class="row g-0">
-    <div class="col-md-5">
-      <img src="{{ url_for('static', filename='images/mine_game.jpg') }}" class="img-fluid rounded-start" alt="Mine Game">
+    <!-- Image Section -->
+    <div class="col-auto">
+      <!-- Adjust filename/path as needed; must match your static folder -->
+      <img
+        src="{{ url_for('static', filename='mine_game.jpg') }}"
+        alt="Mine Game"
+        class="img-fluid"
+        style="width: 200px; height: auto;"
+      />
     </div>
-    <div class="col-md-7 d-flex flex-column justify-content-center">
+    <!-- Content Section -->
+    <div class="col d-flex flex-column justify-content-center">
       <div class="card-body">
         <h3 class="card-title">Play Mine Game</h3>
-        <p class="card-text">Test your luck in our exciting Mine game. Click below to start playing and win rewards!</p>
+        <p class="card-text">
+          Test your luck in our exciting Mine game. Click below to start playing and win rewards!
+        </p>
         <a href="{{ url_for('mines_game') }}" class="btn btn-success btn-lg">Play Now</a>
       </div>
     </div>
