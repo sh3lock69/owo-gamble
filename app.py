@@ -7,15 +7,21 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change_this_secret")
 app.config["DEBUG"] = True  # Disable debug in production
 
+# Connect to MongoDB Atlas (set your MONGODB_URI in environment)
 MONGODB_URI = os.environ["MONGODB_URI"]
 client = MongoClient(MONGODB_URI)
 db = client["discordbotdb"]
 login_codes_col = db["login_codes"]
 users_col = db["users"]
 
+# ---------------------------------------
+# Landing & Navigation Routes
+# ---------------------------------------
 @app.route('/')
 def index():
-    """Landing page with slider."""
+    """If user is logged in, redirect to dashboard; otherwise, show landing page."""
+    if session.get("discord_id"):
+        return redirect(url_for("dashboard"))
     return render_template("index.html")
 
 @app.route('/support')
@@ -30,6 +36,9 @@ def games_info():
 def about():
     return render_template("about.html")
 
+# ---------------------------------------
+# Authentication Routes
+# ---------------------------------------
 @app.route('/login', methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -68,6 +77,9 @@ def login_required(route):
     wrapper.__name__ = route.__name__
     return wrapper
 
+# ---------------------------------------
+# Dashboard & Mines Game Routes
+# ---------------------------------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -76,9 +88,6 @@ def dashboard():
     balance = user_doc.get("balance", 0) if user_doc else 0
     return render_template("dashboard.html", balance=balance)
 
-# -------------------------
-# Mines Game Routes
-# -------------------------
 @app.route('/games/mines')
 @login_required
 def mines_game():
@@ -100,7 +109,6 @@ def start_mines():
     except ValueError:
         flash("Invalid bet or mines input.", "error")
         return redirect(url_for("mines_game"))
-
     if bet_amount <= 0:
         flash("Bet amount must be greater than 0.", "error")
         return redirect(url_for("mines_game"))
@@ -110,10 +118,8 @@ def start_mines():
     if bet_amount > balance:
         flash("Insufficient balance to place this bet.", "error")
         return redirect(url_for("mines_game"))
-
     new_balance = balance - bet_amount
     users_col.update_one({"_id": discord_id}, {"$set": {"balance": new_balance}})
-
     grid_size = 25
     bombs_positions = random.sample(range(grid_size), num_mines)
     session["mines_game"] = {
@@ -133,22 +139,17 @@ def reveal_tile():
     tile_index = request.form.get("tile_index")
     if tile_index is None:
         return jsonify({"error": "No tile index provided"}), 400
-
     try:
         tile_index = int(tile_index)
     except ValueError:
         return jsonify({"error": "Invalid tile index"}), 400
-
     current_game = session.get("mines_game")
     if not current_game or current_game["status"] != "ongoing":
         return jsonify({"error": "No ongoing game."}), 400
-
     if tile_index < 0 or tile_index >= 25:
         return jsonify({"error": "Tile index out of range"}), 400
-
     if tile_index in current_game["revealed"]:
         return jsonify({"error": "Tile already revealed"}), 400
-
     current_game["revealed"].append(tile_index)
     if tile_index in current_game["bombs"]:
         current_game["status"] = "lost"
@@ -165,25 +166,18 @@ def cashout_mines():
     current_game = session.get("mines_game")
     if not current_game or current_game["status"] != "ongoing":
         return jsonify({"error": "No ongoing game to cash out from."}), 400
-
     picks = current_game["picks"]
     bet = current_game["bet"]
-    # Example multiplier
     multiplier = 1.0 + (picks * 0.2)
     payout = bet * multiplier
-
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
     new_balance = balance + payout
     users_col.update_one({"_id": discord_id}, {"$set": {"balance": new_balance}})
-
     current_game["status"] = "cashed"
     session["mines_game"] = current_game
-    return jsonify({
-        "message": f"You cashed out with {picks} safe picks! You won {payout:.2f} credits.",
-        "new_balance": new_balance
-    })
+    return jsonify({"message": f"You cashed out with {picks} safe picks! You won {payout:.2f} credits.", "new_balance": new_balance})
 
 @app.route('/games/mines/new', methods=['POST'])
 @login_required
