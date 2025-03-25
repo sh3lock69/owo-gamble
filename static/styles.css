@@ -18,9 +18,23 @@ body {
 }
 
 .tile {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #444;
+  margin: 2px;
+  cursor: pointer;
+  text-align: center;
   font-size: 1.2rem;
 }
 
-.tile-unknown:hover {
-  background-color: #40444b;
+.tile-unknown {
+  background-color: #23272a;
+}
+
+.tile-gem {
+  background-color: #3ba55d;
+}
+
+.tile-bomb {
+  background-color: #d83c3e;
 }
