@@ -205,5 +205,6 @@ def new_mines_game():
     session.pop("mines_game", None)
     return jsonify({"message": "New game ready."})
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8888))  # Use Railway's port or default to 8888
+    app.run(host="0.0.0.0", port=port)
