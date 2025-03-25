@@ -1,44 +1,27 @@
-/* Full carousel container */
-.full-carousel-container {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: calc(100vh - 56px); /* Subtract navbar height */
-  overflow: hidden;
-}
-
-.carousel-inner,
-.carousel-item,
-.carousel-image {
-  height: 100%;
-}
-
-.carousel-image {
-  object-fit: cover;
-  object-position: center;
-  height: 100%;
-}
-
-/* General styles */
 body {
   background-color: #1f1f1f;
   color: #ddd;
 }
 
+/* Navbar & Cards */
 .navbar, .card, .carousel-caption {
   background-color: #2c2f33;
 }
 
-.carousel-caption h5, .carousel-caption p {
+.carousel-caption h5,
+.carousel-caption p {
   text-shadow: 1px 1px 2px #000;
 }
 
-.btn-primary, .btn-success {
-  background-color: #3ba55d;
-  border-color: #3ba55d;
+/* Make sure images scale well but keep aspect ratio */
+.carousel-image {
+  object-fit: cover;
+  object-position: center;
+  height: auto;
+  max-height: 600px; /* optional limit, so images won't get too tall on large screens */
 }
 
-/* Mines game tiles */
+/* Mines game tiles (unchanged) */
 .tile {
   width: 50px;
   height: 50px;
@@ -49,12 +32,15 @@ body {
   font-size: 1.2rem;
   line-height: 50px;
 }
+
 .tile-unknown {
   background-color: #23272a;
 }
+
 .tile-gem {
   background-color: #3ba55d;
 }
+
 .tile-bomb {
   background-color: #d83c3e;
 }
