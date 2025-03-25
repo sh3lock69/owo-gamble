@@ -20,23 +20,103 @@
           <!-- 5x5 grid of tiles -->
           <div class="d-flex flex-wrap" style="width: 250px;">
             {% for i in range(25) %}
-            {% set revealed = i in current_game.revealed %}
-            {% set is_bomb = i in current_game.bombs %}
-            <div class="tile d-flex align-items-center justify-content-center 
-                 {% if revealed and is_bomb %} tile-bomb 
-                 {% elif revealed and not is_bomb %} tile-gem 
-                 {% else %} tile-unknown {% endif %}"
-                 data-index="{{ i }}"
-                 style="width: 50px; height: 50px; border: 1px solid #444; cursor: pointer; margin: 1px;">
-              {% if revealed and is_bomb %}
-                <span>💣</span>
-              {% elif revealed and not is_bomb %}
-                <span>💎</span>
-              {% endif %}
-            </div>
+              {% set revealed = i in current_game.revealed %}
+              {% set is_bomb = i in current_game.bombs %}
+              <div class="tile d-flex align-items-center justify-content-center 
+                  {% if revealed and is_bomb %} tile-bomb 
+                  {% elif revealed and not is_bomb %} tile-gem 
+                  {% else %} tile-unknown {% endif %}"
+                  data-index="{{ i }}"
+                  style="width: 50px; height: 50px; border: 1px solid #444; cursor: pointer; margin: 1px;">
+                {% if revealed and is_bomb %}
+                  <span>💣</span>
+                {% elif revealed and not is_bomb %}
+                  <span>💎</span>
+                {% endif %}
+              </div>
             {% endfor %}
           </div>
         </div>
       </div>
     {% elif current_game and current_game.status == "lost" %}
-      <h4 class="text-danger">You hit a bomb! Game Over.</
+      <h4 class="text-danger">You hit a bomb! Game Over.</h4>
+      <p><strong>Bet:</strong> {{ current_game.bet }} credits</p>
+      <button onclick="window.location.reload()" class="btn btn-light">Start New Game</button>
+    {% elif current_game and current_game.status == "cashed" %}
+      <h4 class="text-success">You cashed out!</h4>
+      <p><strong>Bet:</strong> {{ current_game.bet }} credits</p>
+      <p><strong>Safe Picks:</strong> {{ current_game.picks }}</p>
+      <button onclick="window.location.reload()" class="btn btn-light">Start New Game</button>
+    {% else %}
+      <!-- No game in progress -->
+      <form method="POST" action="{{ url_for('start_mines') }}">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="bet_amount" class="form-label">Bet Amount</label>
+            <input type="number" step="0.01" min="0" class="form-control" id="bet_amount" name="bet_amount" required>
+          </div>
+          <div class="col-md-4">
+            <label for="mines" class="form-label">Mines</label>
+            <input type="number" min="1" max="24" class="form-control" id="mines" name="mines" value="6" required>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">Start Game</button>
+          </div>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  // Only attach tile click if game is ongoing
+  const currentGame = {{ current_game|tojson if current_game else "null" }};
+
+  if (currentGame && currentGame.status === "ongoing") {
+    document.querySelectorAll('.tile-unknown').forEach(tile => {
+      tile.addEventListener('click', function() {
+        const tileIndex = this.getAttribute('data-index');
+        fetch("{{ url_for('reveal_tile') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ "tile_index": tileIndex })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            if (data.result === "bomb") {
+              alert(data.message);
+              window.location.reload();
+            } else {
+              // Safe pick
+              window.location.reload();
+            }
+          }
+        })
+        .catch(err => console.error(err));
+      });
+    });
+
+    // Cashout
+    const cashoutBtn = document.getElementById('cashout-btn');
+    cashoutBtn.addEventListener('click', function() {
+      fetch("{{ url_for('cashout_mines') }}", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert(data.message);
+          window.location.reload();
+        }
+      })
+      .catch(err => console.error(err));
+    });
+  }
+</script>
+{% endblock %}
