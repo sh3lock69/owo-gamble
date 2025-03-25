@@ -3,16 +3,44 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6">
-    <div class="card p-4 shadow">
+    <!-- Dark card for a dark background theme -->
+    <div class="card p-4 shadow bg-dark text-white">
       <h3 class="card-title text-center mb-3">Login</h3>
+      
+      <!-- Instructions Section -->
+      <p class="mb-4">
+        To log in, please follow these steps:
+        <ol>
+          <li>Go to your Discord server where the bot is active.</li>
+          <li>Type <code>!login</code> in any channel (or via direct message to the bot).</li>
+          <li>Check your DMs from the bot to get your 6-digit login code.</li>
+          <li>Enter your Discord ID and the 6-digit code below to access your dashboard.</li>
+        </ol>
+      </p>
+      
+      <!-- Login Form -->
       <form method="POST">
         <div class="mb-3">
           <label for="discord_id" class="form-label">Discord ID</label>
-          <input type="text" class="form-control" id="discord_id" name="discord_id" placeholder="Enter your Discord ID" required>
+          <input
+            type="text"
+            class="form-control"
+            id="discord_id"
+            name="discord_id"
+            placeholder="Enter your Discord ID"
+            required
+          />
         </div>
         <div class="mb-3">
           <label for="login_code" class="form-label">Login Code</label>
-          <input type="text" class="form-control" id="login_code" name="login_code" placeholder="Enter your login code" required>
+          <input
+            type="text"
+            class="form-control"
+            id="login_code"
+            name="login_code"
+            placeholder="Enter your 6-digit code"
+            required
+          />
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
       </form>
