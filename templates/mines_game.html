@@ -5,14 +5,13 @@
 <!-- Top Bar: shows user balance -->
 <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-dark text-white rounded">
   <div class="h5 mb-0">
-    <!-- Format balance with commas and rename "credits" to "OwO currency" -->
+    <!-- Format balance with commas and zero decimal places -->
     Your Balance:
     <span id="user-balance" class="text-success">
-      {{ "{:,}".format(balance) }}
+      {{ "{:,.0f}".format(balance) }}
     </span>
     OwO currency
   </div>
-  <!-- Removed the "Wallet" button -->
 </div>
 
 <!-- Main Row: Left Panel for Bet settings, Right Panel for 5x5 grid -->
@@ -23,7 +22,6 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="card-title mb-0">Mine Game</h5>
-          <!-- Removed the Manual/Auto toggle -->
         </div>
         <hr>
         
@@ -210,8 +208,8 @@ if (currentGame && currentGame.status === "ongoing") {
       if (data.error) {
         alert(data.error);
       } else {
-        // Update user balance (reformat with commas if desired)
-        const newBal = data.new_balance.toLocaleString('en-US');
+        // Reformat new balance with no decimals
+        const newBal = Math.floor(data.new_balance).toLocaleString('en-US');
         document.getElementById('user-balance').textContent = newBal;
         // Show success message
         document.getElementById('status-message').innerHTML = `<h4 class="text-success">${data.message}</h4>`;
