@@ -1,66 +1,52 @@
-/* General Styles */
+/* 
+========================================
+ Global Site Styles
+========================================
+*/
+
+/* Dark background, light text */
 body {
   background-color: #1f1f1f;
   color: #ddd;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
-/* Navbar Styles */
-.navbar {
-  background-color: #2c2f33;
-}
-.navbar-brand {
-  font-weight: bold;
-  font-size: 1.5rem;
-}
-.navbar-nav .btn {
-  margin-right: 0.5rem;
-}
-
-/* Flash Message Styles */
-.alert {
-  border-radius: 0;
-}
-
-/* Carousel Container */
-.full-carousel-container {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: auto;
-}
-.carousel-inner,
-.carousel-item {
-  height: auto;
-}
-.carousel-image {
-  object-fit: cover;
-  object-position: center;
-  width: 100%;
-  max-height: 600px; /* Adjust max height for desktops */
 }
 
-/* Mobile Adjustments */
-@media (max-width: 576px) {
-  .carousel-image {
-    max-height: 300px;
-  }
-}
+/* Remove default margin from .container if you want a flush layout
+   but typically we keep .container for content spacing. */
 
-/* Card Styles */
+/* Basic card styling */
 .card {
   background-color: #2c2f33;
   border: none;
   border-radius: 5px;
 }
 
-/* Carousel Caption */
-.carousel-caption h5,
-.carousel-caption p {
-  text-shadow: 1px 1px 2px #000;
+/* Navbar */
+.navbar {
+  background-color: #2c2f33 !important;
+}
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
 }
 
-/* Fancy Button Styles */
+/* Flash Messages */
+.alert {
+  border-radius: 0;
+}
+
+/* Container padding for content pages */
+.container {
+  padding-top: 1rem;
+}
+
+/* Buttons in the navbar (fancy outline style) */
+.navbar-nav .btn {
+  margin-right: 0.5rem;
+}
+
 .btn-outline-light {
   border: 2px solid #fff;
   transition: background-color 0.3s, color 0.3s;
@@ -88,28 +74,120 @@ body {
   color: #fff;
 }
 
-/* Mines Game Tiles */
+/* Large buttons in the Mines game side panel */
+.btn-lg {
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  border-radius: 6px;
+}
+
+/* 
+========================================
+ Carousel (Landing Page)
+========================================
+*/
+
+.full-carousel-container {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: auto;
+}
+
+.carousel-inner,
+.carousel-item {
+  height: auto;
+}
+
+.carousel-image {
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  max-height: 600px; /* Limit height on desktop */
+}
+
+/* On very small screens, reduce max height to prevent huge images */
+@media (max-width: 576px) {
+  .carousel-image {
+    max-height: 300px;
+  }
+}
+
+.carousel-caption h5,
+.carousel-caption p {
+  text-shadow: 1px 1px 2px #000;
+}
+
+/* 
+========================================
+ Mines Game - Stake-like Layout
+========================================
+*/
+
+/* Top bar (balance + wallet) */
+.bg-dark.text-white.rounded {
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  margin-bottom: 1rem;
+}
+
+/* Left panel card for bet settings */
+.card.bg-dark {
+  background-color: #2b2f36 !important;
+  border-radius: 8px;
+}
+.card.bg-dark .card-body {
+  padding: 1.5rem;
+}
+
+/* Tiles for the 5x5 grid */
 .tile {
   width: 50px;
   height: 50px;
-  border: 1px solid #444;
   margin: 2px;
-  cursor: pointer;
-  text-align: center;
+  border-radius: 4px;
+  border: none;
   font-size: 1.2rem;
+  transition: background-color 0.2s;
+  text-align: center;
   line-height: 50px;
+  color: #fff; /* So the bomb/gem icons are visible */
 }
 .tile-unknown {
-  background-color: #23272a;
+  background-color: #3a3f45;
+}
+.tile-unknown:hover {
+  background-color: #4a4f55;
 }
 .tile-gem {
-  background-color: #3ba55d;
+  background-color: #3ba55d; /* Green for safe tile */
 }
 .tile-bomb {
-  background-color: #d83c3e;
+  background-color: #d83c3e; /* Red for bomb tile */
 }
 
-/* Container Padding */
-.container {
-  padding-top: 1rem;
+/* Multiplier display box */
+#multiplier {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffc107; /* golden color for emphasis */
+}
+
+/* 
+========================================
+ Additional Utility Classes
+========================================
+*/
+
+/* For spacing or custom backgrounds if needed */
+.bg-secondary {
+  background-color: #383d42 !important;
+}
+.text-info {
+  color: #17a2b8 !important;
+}
+.text-success {
+  color: #3ba55d !important;
+}
+.text-danger {
+  color: #d83c3e !important;
 }
