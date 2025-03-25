@@ -1,14 +1,9 @@
-/* Remove default margin from the container on index page to go full screen */
-body > .container {
-  margin-top: 0 !important;
-}
-
-/* Full carousel container: fill viewport height */
+/* Full carousel container */
 .full-carousel-container {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: calc(100vh - 56px); /* subtract navbar height (~56px) */
+  height: calc(100vh - 56px); /* Subtract navbar height */
   overflow: hidden;
 }
 
@@ -18,22 +13,29 @@ body > .container {
   height: 100%;
 }
 
-/* Make images cover the full container without stretching */
 .carousel-image {
   object-fit: cover;
   object-position: center;
   height: 100%;
 }
 
-/* Dark background, white text */
+/* General styles */
 body {
   background-color: #1f1f1f;
   color: #ddd;
 }
 
-/* Navbar & Cards */
-.navbar, .card {
-  background-color: #2c2c2c;
+.navbar, .card, .carousel-caption {
+  background-color: #2c2f33;
+}
+
+.carousel-caption h5, .carousel-caption p {
+  text-shadow: 1px 1px 2px #000;
+}
+
+.btn-primary, .btn-success {
+  background-color: #3ba55d;
+  border-color: #3ba55d;
 }
 
 /* Mines game tiles */
