@@ -5,21 +5,18 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change_this_secret")
-app.config["DEBUG"] = True  # Disable debug in production
+app.config["DEBUG"] = True  # Disable in production
 
-# Connect to MongoDB Atlas (set your MONGODB_URI in environment)
+# Connect to MongoDB (Set MONGODB_URI in your environment variables)
 MONGODB_URI = os.environ["MONGODB_URI"]
 client = MongoClient(MONGODB_URI)
 db = client["discordbotdb"]
 login_codes_col = db["login_codes"]
 users_col = db["users"]
 
-# ---------------------------------------
-# Landing & Navigation Routes
-# ---------------------------------------
 @app.route('/')
 def index():
-    """If user is logged in, redirect to dashboard; otherwise, show landing page."""
+    """If user is logged in, go to dashboard; otherwise, show landing page."""
     if session.get("discord_id"):
         return redirect(url_for("dashboard"))
     return render_template("index.html")
@@ -36,22 +33,23 @@ def games_info():
 def about():
     return render_template("about.html")
 
-# ---------------------------------------
-# Authentication Routes
-# ---------------------------------------
 @app.route('/login', methods=["GET", "POST"])
 def login():
+    """Login page: user enters Discord ID and login code."""
     if request.method == "POST":
         discord_id = request.form.get("discord_id")
         login_code = request.form.get("login_code")
+
         if not discord_id or not login_code:
             flash("Please enter both your Discord ID and login code.", "error")
             return redirect(url_for('login'))
+
         try:
             discord_id_int = int(discord_id)
         except ValueError:
             flash("Discord ID must be numeric.", "error")
             return redirect(url_for("login"))
+
         record = login_codes_col.find_one({"_id": discord_id_int})
         if record and record.get("code") == login_code:
             session["discord_id"] = discord_id_int
@@ -64,11 +62,13 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logs out the user and returns to landing page."""
     session.pop("discord_id", None)
     flash("Logged out successfully.", "success")
     return redirect(url_for("index"))
 
 def login_required(route):
+    """Decorator to require login for certain routes."""
     def wrapper(*args, **kwargs):
         if "discord_id" not in session:
             flash("Please log in first.", "error")
@@ -77,20 +77,22 @@ def login_required(route):
     wrapper.__name__ = route.__name__
     return wrapper
 
-# ---------------------------------------
-# Dashboard & Mines Game Routes
-# ---------------------------------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    """Dashboard shows user balance + link to Mines game."""
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
     return render_template("dashboard.html", balance=balance)
 
+# ------------------------
+# Mines Game Routes
+# ------------------------
 @app.route('/games/mines')
 @login_required
 def mines_game():
+    """Renders the Mines game page."""
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
@@ -100,15 +102,18 @@ def mines_game():
 @app.route('/games/mines/start', methods=['POST'])
 @login_required
 def start_mines():
+    """Start a new Mines game with bet and # of mines."""
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
+
     try:
         bet_amount = float(request.form.get("bet_amount", 0))
         num_mines = int(request.form.get("mines", 1))
     except ValueError:
         flash("Invalid bet or mines input.", "error")
         return redirect(url_for("mines_game"))
+
     if bet_amount <= 0:
         flash("Bet amount must be greater than 0.", "error")
         return redirect(url_for("mines_game"))
@@ -118,9 +123,11 @@ def start_mines():
     if bet_amount > balance:
         flash("Insufficient balance to place this bet.", "error")
         return redirect(url_for("mines_game"))
+
     new_balance = balance - bet_amount
     users_col.update_one({"_id": discord_id}, {"$set": {"balance": new_balance}})
-    grid_size = 25
+
+    grid_size = 25  # 5x5
     bombs_positions = random.sample(range(grid_size), num_mines)
     session["mines_game"] = {
         "bet": bet_amount,
@@ -136,6 +143,7 @@ def start_mines():
 @app.route('/games/mines/reveal', methods=['POST'])
 @login_required
 def reveal_tile():
+    """Reveal a single tile in the Mines game."""
     tile_index = request.form.get("tile_index")
     if tile_index is None:
         return jsonify({"error": "No tile index provided"}), 400
@@ -143,13 +151,17 @@ def reveal_tile():
         tile_index = int(tile_index)
     except ValueError:
         return jsonify({"error": "Invalid tile index"}), 400
+
     current_game = session.get("mines_game")
     if not current_game or current_game["status"] != "ongoing":
         return jsonify({"error": "No ongoing game."}), 400
+
     if tile_index < 0 or tile_index >= 25:
         return jsonify({"error": "Tile index out of range"}), 400
+
     if tile_index in current_game["revealed"]:
         return jsonify({"error": "Tile already revealed"}), 400
+
     current_game["revealed"].append(tile_index)
     if tile_index in current_game["bombs"]:
         current_game["status"] = "lost"
@@ -163,25 +175,33 @@ def reveal_tile():
 @app.route('/games/mines/cashout', methods=['POST'])
 @login_required
 def cashout_mines():
+    """Cash out current Mines game with a simple multiplier based on safe picks."""
     current_game = session.get("mines_game")
     if not current_game or current_game["status"] != "ongoing":
         return jsonify({"error": "No ongoing game to cash out from."}), 400
+
     picks = current_game["picks"]
     bet = current_game["bet"]
     multiplier = 1.0 + (picks * 0.2)
     payout = bet * multiplier
+
     discord_id = session["discord_id"]
     user_doc = users_col.find_one({"_id": discord_id})
     balance = user_doc.get("balance", 0) if user_doc else 0
     new_balance = balance + payout
     users_col.update_one({"_id": discord_id}, {"$set": {"balance": new_balance}})
+
     current_game["status"] = "cashed"
     session["mines_game"] = current_game
-    return jsonify({"message": f"You cashed out with {picks} safe picks! You won {payout:.2f} credits.", "new_balance": new_balance})
+    return jsonify({
+        "message": f"You cashed out with {picks} safe picks! You won {payout:.2f} credits.",
+        "new_balance": new_balance
+    })
 
 @app.route('/games/mines/new', methods=['POST'])
 @login_required
 def new_mines_game():
+    """Reset the session's Mines game data."""
     session.pop("mines_game", None)
     return jsonify({"message": "New game ready."})
 
